@@ -1,0 +1,36 @@
+# Sobe o MySQL 8 (porta 3306, usuario root / senha root, banco baozistore).
+#   docker compose up -d mysql      -> so o banco (rodar a API pela IDE ou mvnw)
+#   docker compose up --build       -> banco + API (http://localhost:8080), sem precisar de JDK
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: baozistore-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: baozistore
+      TZ: America/Sao_Paulo
+    ports:
+      - "3306:3306"
+    volumes:
+      - baozistore-dados:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  api:
+    build: .
+    container_name: baozistore-api
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/baozistore?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo
+      DB_USER: root
+      DB_PASSWORD: root
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  baozistore-dados:
